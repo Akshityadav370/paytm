@@ -126,4 +126,24 @@ router.put('/', authMiddleWare, async (req, res) => {
   }
 });
 
+router.get('/bulk', authMiddleWare, async (req, res) => {
+  const filter = req.query.filter || '';
+  try {
+    const data = await User.find({
+      $or: [{ firstName: filter }, { lastName: filter }, { username: filter }],
+    });
+    res.json({
+      users: data.map((user) => ({
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        _id: user._id,
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching bulk', error);
+    res.status(500).json({ message: error });
+  }
+});
+
 module.exports = router;
