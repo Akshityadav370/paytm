@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config');
 const zod = require('zod');
+const { authMiddleWare } = require('../routes/middleware');
 
 const router = express.Router();
 
@@ -17,6 +18,12 @@ const signupBody = zod.object({
 const signinBody = zod.object({
   username: zod.string().email(),
   password: zod.string(),
+});
+
+const updateBody = zod.object({
+  password: zod.string().optional(),
+  firstName: zod.string().optional(),
+  lastName: zod.string().optional(),
 });
 
 router.post('/signup', async (req, res) => {
@@ -73,8 +80,8 @@ router.post('/signin', async (req, res) => {
 
     const { username, password } = req.body;
     const user = await User.findOne({
-      username: req.body.username,
-      password: req.body.password,
+      username: username,
+      password: password,
     });
 
     if (user) {
@@ -94,8 +101,15 @@ router.post('/signin', async (req, res) => {
   }
 });
 
-router.put('/update/:id', async (req, res) => {
+router.put('/', authMiddleWare, async (req, res) => {
   try {
+    const { success } = updateBody.safeParse(req.body);
+    if (!success) {
+      res.status(411).json({
+        message: 'Error while updating information',
+      });
+      return;
+    }
     const { firstName, lastName, password } = req.body;
     const { id } = req.params;
     const user = await User.findByIdAndUpdate(id, {
@@ -103,7 +117,9 @@ router.put('/update/:id', async (req, res) => {
       lastName,
       password,
     });
-    res.json({ user });
+    res.json({
+      message: 'Updated successfully',
+    });
   } catch (error) {
     console.error(`Error changing user's data`, error);
     res.status(500).json({ message: error });
