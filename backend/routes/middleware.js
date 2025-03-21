@@ -1,5 +1,5 @@
-const bcrypt = require('bcrypt');
 const { JWT_SECRET } = require('../config');
+const jwt = require('jsonwebtoken');
 
 const authMiddleWare = (req, res, next) => {
   try {
@@ -17,6 +17,7 @@ const authMiddleWare = (req, res, next) => {
 
       next();
     } catch (err) {
+      console.error(err);
       return res.status(403).json({});
     }
   } catch (error) {

@@ -56,11 +56,11 @@ router.post('/signup', async (req, res) => {
       username,
     });
 
-    const token = jwt.sign(newUser._id, JWT_SECRET);
+    const token = jwt.sign({ userId: newUser._id }, JWT_SECRET);
 
     res.json({
       message: 'User created successfully!',
-      token,
+      token: token,
     });
   } catch (error) {
     console.log(error);
@@ -81,19 +81,22 @@ router.post('/signin', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({
       username: username,
-      password: password,
     });
 
-    if (user) {
-      const token = jwt(userFound._id, JWT_SECRET);
-
-      res.status(200).json({ message: 'Signed in successfully!', token });
+    if (!user) {
+      res.status(411).json({ message: 'User not found!' });
       return;
     }
 
-    res.status(411).json({
-      message: 'Error while logging in',
-    });
+    const correctUser = await bcrypt.compare(password, user.password);
+    if (!correctUser) {
+      res.status(411).json({ message: 'Incorrect username/password!' });
+      return;
+    }
+
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+
+    res.status(200).json({ message: 'Signed in successfully!', token });
   } catch (error) {
     res.status(500).json({
       message: 'Error while logging in',
@@ -111,7 +114,7 @@ router.put('/', authMiddleWare, async (req, res) => {
       return;
     }
     const { firstName, lastName, password } = req.body;
-    const { id } = req.params;
+    const { id } = req.userId;
     const user = await User.findByIdAndUpdate(id, {
       firstName,
       lastName,
@@ -130,7 +133,18 @@ router.get('/bulk', authMiddleWare, async (req, res) => {
   const filter = req.query.filter || '';
   try {
     const data = await User.find({
-      $or: [{ firstName: filter }, { lastName: filter }, { username: filter }],
+      $or: [
+        {
+          firstName: {
+            $regex: filter,
+          },
+        },
+        {
+          lastName: {
+            $regex: filter,
+          },
+        },
+      ],
     });
     res.json({
       users: data.map((user) => ({
