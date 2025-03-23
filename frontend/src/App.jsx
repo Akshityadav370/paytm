@@ -14,8 +14,9 @@ import { UserContext, UserProvider } from './context/user';
 
 const ProtectedLayout = () => {
   const { user } = useContext(UserContext);
-
-  if (!user?.token || user?.token === null) {
+  console.log('hi', user);
+  if (!user?.token && user?.token?.length === 0) {
+    console.log('hello', user);
     return <Navigate to='/signup' replace />;
   }
 
@@ -30,7 +31,7 @@ function App() {
           <Route path='/signin' element={<Signin />}></Route>
           <Route path='/signup' element={<Signup />}></Route>
           <Route element={<ProtectedLayout />}>
-            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path='/*' element={<Dashboard />} />
             <Route path='/send' element={<Send />} />
           </Route>
         </Routes>

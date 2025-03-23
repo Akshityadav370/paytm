@@ -1,6 +1,46 @@
-import React from 'react';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { BASE_URL } from '../config';
 
-const SendMoney = () => {
+const SendMoney = ({ friend }) => {
+  const [myBalan, setMyBalan] = useState();
+  const [amount, setAmount] = useState(0);
+
+  const fetchMyBalance = async () => {
+    const res = await axios.get('/account/balance', {
+      headers: {
+        authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    setMyBalan(res?.data?.balance);
+  };
+
+  const initiateTransfer = async () => {
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/account/transfer`,
+        { amount: amount, to: friend._id },
+        {
+          headers: {
+            authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      if (res.status) {
+        toast.success('Transferred Successfully!');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Error in Transferring!');
+    }
+  };
+
+  useEffect(() => {
+    fetchMyBalance();
+  }, [friend]);
+
   return (
     <div className='flex justify-center h-screen bg-gray-100'>
       <div className='h-full flex flex-col justify-center'>
@@ -24,13 +64,18 @@ const SendMoney = () => {
                   Amount (in Rs)
                 </label>
                 <input
+                  value={amount}
+                  onChange={(e) => setAmount(parseInt(e.target.value))}
                   type='number'
                   className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
                   id='amount'
                   placeholder='Enter amount'
                 />
               </div>
-              <button className='justify-center rounded-md text-sm font-medium ring-offset-background transition-colors h-10 px-4 py-2 w-full bg-green-500 text-white'>
+              <button
+                onClick={initiateTransfer}
+                className='justify-center rounded-md text-sm font-medium ring-offset-background transition-colors h-10 px-4 py-2 w-full bg-green-500 text-white'
+              >
                 Initiate Transfer
               </button>
             </div>

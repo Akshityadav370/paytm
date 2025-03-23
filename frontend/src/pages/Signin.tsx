@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Heading from '../components/Heading';
 import SubHeading from '../components/Subheading';
 import InputBox from '../components/InputBox';
@@ -26,15 +26,26 @@ const Signin = () => {
     try {
       const res = await axios.post(`${BASE_URL}/user/signin`, formData);
       if (res.status === 200) {
+        setUser({
+          token: res?.data?.token,
+          firstName: res?.data?.firstName,
+          lastName: res?.data?.lastName,
+        });
+        localStorage.setItem('token', res?.data?.token);
         toast.success('Signed in!');
-        navigate('/dashboard', { replace: true });
-        setUser({ token: res?.data?.token });
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Signin failed:', error);
       toast.error(error?.response?.data?.message || 'Signin failed!');
     }
   };
+
+  useEffect(() => {
+    return () => {
+      localStorage.removeItem('user');
+    };
+  }, []);
 
   return (
     <div className='bg-slate-300 h-screen flex justify-center'>

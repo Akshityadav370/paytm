@@ -101,7 +101,12 @@ router.post('/signin', async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET);
 
-    res.status(200).json({ message: 'Signed in successfully!', token });
+    res.status(200).json({
+      message: 'Signed in successfully!',
+      token,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
   } catch (error) {
     res.status(500).json({
       message: 'Error while logging in',
@@ -142,11 +147,13 @@ router.get('/bulk', authMiddleWare, async (req, res) => {
         {
           firstName: {
             $regex: filter,
+            $options: 'i',
           },
         },
         {
           lastName: {
             $regex: filter,
+            $options: 'i',
           },
         },
       ],

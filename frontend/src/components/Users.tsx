@@ -1,16 +1,49 @@
-import { useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import React from 'react';
 import Button from './Button';
+import { BASE_URL } from '../config';
+import { UserContext } from '../context/user';
+
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export const Users = () => {
-  // Replace with backend call
-  const [users, setUsers] = useState([
-    {
-      firstName: 'Harkirat',
-      lastName: 'Singh',
-      _id: 1,
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [filter, setFilter] = useState('');
+  const [debouncedFilter, setDebouncedFilter] = useState('');
+  const { user } = useContext(UserContext);
+
+  const handleFilterChange = (e) => {
+    setFilter(e.target.value);
+  };
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedFilter(filter);
+    }, 500);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [filter]);
+
+  const fetchUser = useCallback(async () => {
+    const query = debouncedFilter || '';
+    try {
+      const res = await axios.get(`${BASE_URL}/user/bulk?filter=${query}`, {
+        headers: {
+          authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      setUsers(res.data.users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  }, [debouncedFilter]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [debouncedFilter, fetchUser]);
 
   return (
     <>
@@ -18,13 +51,15 @@ export const Users = () => {
       <div className='my-2'>
         <input
           type='text'
+          value={filter}
+          onChange={handleFilterChange}
           placeholder='Search users...'
           className='w-full px-2 py-1 border rounded border-slate-200'
         ></input>
       </div>
       <div>
         {users.map((user) => (
-          <User user={user} />
+          <User key={user._id} user={user} />
         ))}
       </div>
     </>
@@ -32,6 +67,8 @@ export const Users = () => {
 };
 
 function User({ user }) {
+  const navigate = useNavigate();
+
   return (
     <div className='flex justify-between'>
       <div className='flex'>
@@ -48,7 +85,10 @@ function User({ user }) {
       </div>
 
       <div className='flex flex-col justify-center h-ful'>
-        <Button label={'Send Money'} onClick={() => {}} />
+        <Button
+          label={'Send Money'}
+          onClick={() => navigate('/send', { state: { user } })}
+        />
       </div>
     </div>
   );
